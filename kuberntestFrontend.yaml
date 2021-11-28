@@ -1,0 +1,64 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: appsettings
+  namespace: linkerd1
+  labels:
+    app: api1
+data:
+  appsettings.json: |-
+      {
+        "ApiUrlBase": "http://40.88.216.141",
+        "Logging": {
+        "LogLevel": {
+            "Default": "Information",
+            "Microsoft": "Warning",
+            "Microsoft.Hosting.Lifetime": "Information"
+                     }
+                   },
+         "AllowedHosts": "*"
+
+      }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api1
+  namespace: linkerd1
+spec:
+  selector:
+    matchLabels:
+      app: api1
+  template:
+    metadata:
+      labels:
+        app: api1
+    spec:
+      containers:
+      - name: api1
+        image: verifylinkerd.azurecr.io/api1:latest123
+        ports:
+        - containerPort: 80
+        volumeMounts:
+          - name: appsettings-volume
+            mountPath: /app/settings
+      volumes:
+        - name: appsettings-volume
+          configMap:
+            name: appsettings
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api1service
+  namespace: linkerd1
+spec:
+  type: LoadBalancer
+  selector:
+    app: api1
+  ports:
+  - port: 80
+    targetPort: 80
+
+---
